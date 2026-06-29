@@ -1,26 +1,62 @@
-const mongoose = require('mongoose');
+const express = require('express');
+const router = express.Router();
+const Product = require('../models/Product');
 
-const productSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    price: {
-      type: Number,
-      required: true,
-    },
-    description: {
-      type: String,
-      default: '',
-    },
-    category: {
-      type: String,
-      default: 'General',
-    },
-  },
-  { timestamps: true }
-);
+// CREATE - POST /api/products
+router.post('/', async (req, res) => {
+  try {
+    const product = new Product(req.body);
+    const saved = await product.save();
+    res.status(201).json(saved);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
 
-module.exports = mongoose.model('Product', productSchema);
+// READ ALL - GET /api/products
+router.get('/', async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// READ ONE - GET /api/products/:id
+router.get('/:id', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// UPDATE - PUT /api/products/:id
+router.put('/:id', async (req, res) => {
+  try {
+    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    if (!updated) return res.status(404).json({ error: 'Product not found' });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// DELETE - DELETE /api/products/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    const deleted = await Product.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Product not found' });
+    res.json({ message: 'Product deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
